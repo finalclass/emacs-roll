@@ -144,7 +144,7 @@ panes and allow you to scroll through them."
   :group 'roll
   :safe #'integerp)
 
-(defcustom roll-debug-enabled t
+(defcustom roll-debug-enabled nil
   "Whether to send debug messages to the *Messages* buffer.
 Useful for troubleshooting Roll's behavior or understanding
 how the internal state changes."

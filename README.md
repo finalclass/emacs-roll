@@ -50,6 +50,7 @@ Think of it as having an infinite horizontal workspace where you can quickly nav
 | `S-C-<right>` | `roll-move-right` | Move current pane to the right |
 | `C-c C-r o` | `roll-open` | Create new pane |
 | `C-c C-r r` | `roll-reload` | Refresh window layout |
+| `C-c C-r c` | `roll-reload` | Close current pane |
 
 ## Configuration
 

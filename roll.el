@@ -31,6 +31,7 @@
 ;; 2. Open new panes: M-x roll-open (or C-c C-r o)
 ;; 3. Navigate: Shift + arrow keys
 ;; 4. Move panes: Shift + Ctrl + arrow keys
+;; 5. Close pane: M-x roll-close (or C-c C-r c)
 ;;
 ;; ## Default Key Bindings
 ;;
@@ -42,6 +43,7 @@
 ;; | S-C-<right>      | roll-move-right  | Move current pane right       |
 ;; | C-c C-r o        | roll-open        | Create new pane               |
 ;; | C-c C-r r        | roll-reload      | Refresh window layout         |
+;; | C-c C-r c        | roll-close      | Close current pane            |
 ;;
 ;; ## Configuration
 ;;
@@ -108,6 +110,7 @@ Each pane stores the buffer being displayed and the cursor position."
     (define-key map (kbd "S-C-<right>") 'roll-move-right)
     (define-key map (kbd "C-c C-r r") 'roll-reload)
     (define-key map (kbd "C-c C-r o") 'roll-open)
+    (define-key map (kbd "C-c C-r c") 'roll-close)
     map)
   "Keymap for roll-mode.")
 
@@ -450,6 +453,65 @@ the moved pane by shifting focus right as well."
           (roll--redraw)
           (roll-go-right))
       (message "Cannot move pane further right"))))
+
+;;;###autoload
+(defun roll-close ()
+  "Close the current pane.
+
+If this is the only remaining pane, Roll mode will be disabled.
+Otherwise, the pane is removed and focus moves to an adjacent pane."
+  (interactive)
+  (unless roll-mode
+    (user-error "Roll mode is not enabled"))
+
+  (roll--save-visible-buffers)
+
+  (let ((current-pane-index (roll--current-pane-index))
+        (total-panes (length roll--panes)))
+
+    (cond
+     ;; Only one pane left - disable roll mode
+     ((= total-panes 1)
+      (roll-mode -1)
+      (message "Last pane closed - Roll mode disabled"))
+
+     ;; Multiple panes - remove current pane
+     (t
+      ;; Remove the pane from the list
+      (setq roll--panes (append (cl-subseq roll--panes 0 current-pane-index)
+                                (cl-subseq roll--panes (1+ current-pane-index))))
+
+      ;; Adjust first visible pane if we removed something to the left of view
+      (when (>= roll--first-visible-pane (length roll--panes))
+        (setq roll--first-visible-pane (max 0 (1- roll--first-visible-pane))))
+
+      ;; If we have fewer panes than visible windows, reduce visible windows
+      (let ((remaining-panes (length roll--panes)))
+        (when (< remaining-panes roll--nof-visible-panes)
+          (setq roll--nof-visible-panes remaining-panes)
+          ;; Remove excess windows
+          (let ((excess-windows (nthcdr roll--nof-visible-panes roll--windows)))
+            (dolist (win excess-windows)
+              (when (window-live-p win)
+                (delete-window win)))
+            (setq roll--windows (cl-subseq roll--windows 0 roll--nof-visible-panes)))))
+
+      ;; Ensure we don't show beyond available panes
+      (let ((max-first-visible (max 0 (- (length roll--panes) roll--nof-visible-panes))))
+        (when (> roll--first-visible-pane max-first-visible)
+          (setq roll--first-visible-pane max-first-visible)))
+
+      ;; Redraw and focus on a valid window
+      (roll--redraw)
+      (let ((current-window-index (roll--current-window-index)))
+        (when (or (null current-window-index)
+                  (>= current-window-index roll--nof-visible-panes))
+          ;; Focus on the rightmost window if current focus is invalid
+          (select-window (nth (1- roll--nof-visible-panes) roll--windows))))
+
+      (roll--debug "pane closed"))))
+  (balance-windows))
+
 
 (provide 'roll)
 ;;; roll.el ends here

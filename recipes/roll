@@ -1,0 +1,3 @@
+  (roll :repo "yourusername/roll.el"
+         :fetcher github
+         :files ("roll.el"))

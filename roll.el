@@ -147,7 +147,7 @@ panes and allow you to scroll through them."
   :group 'roll
   :safe #'integerp)
 
-(defcustom roll-debug-enabled nil
+(defcustom roll-debug-enabled t
   "Whether to send debug messages to the *Messages* buffer.
 Useful for troubleshooting Roll's behavior or understanding
 how the internal state changes."
@@ -231,7 +231,7 @@ TODO: This function is currently not implemented."
   "Insert PANE into roll--panes after the current visible area.
 The pane is inserted at the position immediately after the rightmost
 visible pane, which allows it to become visible when focus moves right."
-  (let* ((insert-position (min (+ roll--first-visible-pane roll--nof-visible-panes)
+  (let* ((insert-position (min (+ roll--first-visible-pane (roll--current-window-index) 1)
                                (length roll--panes)))
          (before (cl-subseq roll--panes 0 insert-position))
          (after (cl-subseq roll--panes insert-position)))
